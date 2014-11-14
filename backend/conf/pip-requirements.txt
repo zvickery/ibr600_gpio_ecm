@@ -1,0 +1,6 @@
+Cython==0.21.1
+falcon==0.2.0a1
+gunicorn==19.1.1
+requests==2.4.3
+six==1.8.0
+wsgiref==0.1.2
