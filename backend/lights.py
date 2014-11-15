@@ -26,7 +26,11 @@ class LightsResource:
         r = requests.get(self.gpio_url, auth=self.ecm_auth)
         j = json.loads(r.text)
         print(r.text)
-        jr = {'status': 1 == j['data'][0]['data']}
+        if j['data'][0]['success']:
+            jr = {'success': True, 'status': 1 == j['data'][0]['data']}
+        else:
+            jr = {'success': False, 'reason': j['data'][0]['reason']}
+
         return json.dumps(jr)
 
     def set_ecm_state(self, state):
