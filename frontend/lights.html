@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>light controller</title>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+$(document).ready(function() {
+    $.ajax({url: "/lights",
+            type: "GET",
+            dataType: "text"})
+        .done(function(response) {
+            var json = $.parseJSON(response);
+            $("#loading").toggle();
+            if (json.success) {
+                $("#control").toggle();
+                $("#lightsOn").prop("checked", json.status);
+            }
+            else {
+                $("#offline").toggle();
+            }
+        })
+        .fail(function() {
+            $("#error").toggle();
+        });
+
+    $("#lightsOn").change(function () {
+        var changeOrder = { "state": $("#lightsOn").prop("checked") };
+        $.ajax({
+            url: '/lights',
+            data: JSON.stringify(changeOrder),
+            type: 'POST',
+            contentType: "application/json",
+            dataType: "json"
+        });
+    });
+});
+</script>
+</head>
+
+<body>
+<div id="loading">checking light status...</div>
+<div id="control" style="display: none">
+<input type="checkbox" id="lightsOn"/>
+<span>Lights on</span>
+</div>
+<div id="offline" style="display: none">controller is offline, sorry</div>
+<div id="error" style="display: none">there was an error, sorry</div>
+</body>
+</html>

@@ -24,8 +24,16 @@ class LightsResource:
 
     def get_ecm_status(self):
         r = requests.get(self.gpio_url, auth=self.ecm_auth)
-        j = json.loads(r.text)
-        print(r.text)
+        return self.return_from_ecm_response(r)
+
+    def set_ecm_state(self, state):
+        r = requests.put(self.gpio_url, headers=self.json_header,
+                         data='1' if state else '0', auth=self.ecm_auth)
+        return self.return_from_ecm_response(r)
+
+    def return_from_ecm_response(self, response):
+        j = json.loads(response.text)
+        print(response.text)
         if j['data'][0]['success']:
             jr = {'success': True, 'status': 1 == j['data'][0]['data']}
         else:
@@ -33,16 +41,11 @@ class LightsResource:
 
         return json.dumps(jr)
 
-    def set_ecm_state(self, state):
-        r = requests.put(self.gpio_url, headers=self.json_header,
-                         data='1' if state else '0', auth=self.ecm_auth)
-        return r.text
-
     def set_success_status(self, resp):
         resp.status = falcon.HTTP_200
         resp.set_header('Content-Type', 'application/json')
 
-    def on_put(self, req, resp):
+    def put_post_handler(self, req, resp):
         try:
             input_doc = json.loads(req.stream.read())
             resp.body = self.set_ecm_state(input_doc['state'])
@@ -51,6 +54,12 @@ class LightsResource:
             e = sys.exc_info()[1]
             raise falcon.HTTPBadRequest('bad json', str(e),
                                         headers=self.json_header)
+
+    def on_put(self, req, resp):
+        self.put_post_handler(req, resp)
+
+    def on_post(self, req, resp):
+        self.put_post_handler(req, resp)
 
     def on_get(self, req, resp):
         self.set_success_status(resp)
