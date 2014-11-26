@@ -1,0 +1,3 @@
+*.pyc
+backend/log
+backend/env.sh

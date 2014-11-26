@@ -2,7 +2,9 @@
 <html>
 <head>
 <title>light controller</title>
+<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 <script>
 $(document).ready(function() {
     $.ajax({url: "/lights",
@@ -13,18 +15,21 @@ $(document).ready(function() {
             $("#loading").toggle();
             if (json.success) {
                 $("#control").toggle();
-                $("#lightsOn").prop("checked", json.status);
+                $("#lightswitch").val(json.status ? "on" : "off").slider("refresh");
             }
             else {
+                $("#offline").text("could not query status: " + json.reason);
                 $("#offline").toggle();
             }
         })
-        .fail(function() {
+        .fail(function(response) {
+            $("#loading").toggle();
+            $("#error").text("error: " + response);
             $("#error").toggle();
         });
 
-    $("#lightsOn").change(function () {
-        var changeOrder = { "state": $("#lightsOn").prop("checked") };
+    $("#lightswitch").change(function () {
+        var changeOrder = { "state": $("#lightswitch").val() === "on" };
         $.ajax({
             url: '/lights',
             data: JSON.stringify(changeOrder),
@@ -38,12 +43,17 @@ $(document).ready(function() {
 </head>
 
 <body>
-<div id="loading">checking light status...</div>
-<div id="control" style="display: none">
-<input type="checkbox" id="lightsOn"/>
-<span>Lights on</span>
-</div>
-<div id="offline" style="display: none">controller is offline, sorry</div>
-<div id="error" style="display: none">there was an error, sorry</div>
+  <div id="loading">checking light status...</div>
+  <div id="control" style="display: none">
+    <form>
+      <label for="lightswitch">Lights</label>
+      <select id="lightswitch" name="lightswitch" data-role="slider">
+        <option value="off">Off</option>
+        <option value="on">On</option>
+      </select>
+    </form>
+  </div>
+  <div id="offline" style="display: none"/>
+  <div id="error" style="display: none"/>
 </body>
 </html>
