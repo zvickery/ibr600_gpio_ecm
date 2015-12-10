@@ -12,14 +12,17 @@ from wsgiref import simple_server
 
 
 class LightsResource:
+    """This code assumes the GPIO config tree in FW 6.0.2."""
 
     def __init__(self):
         user = os.environ.get('ECM_USERNAME')
         password = os.environ.get('ECM_PASSWORD')
         router = os.environ.get('ECM_ROUTER')
+        self.api_on = 'out_action_high'
+        self.api_off = 'out_action_low'
 
         self.ecm_auth = (user, password)
-        self.gpio_url = 'https://www.cradlepointecm.com/api/v1/remote/config/system/connector_gpio/output/?id={}'.format(router)
+        self.gpio_url = 'https://www.cradlepointecm.com/api/v1/remote/config/system/gpio_actions/pin/0/current_action/?id={}'.format(router)
         self.json_header = {"Content-Type": "application/json; charset=UTF-8"}
 
     def get_ecm_status(self):
@@ -27,15 +30,19 @@ class LightsResource:
         return self.return_from_ecm_response(r)
 
     def set_ecm_state(self, state):
+        api_state = self.quote(self.api_on if state else self.api_off)
         r = requests.put(self.gpio_url, headers=self.json_header,
-                         data='1' if state else '0', auth=self.ecm_auth)
+                         data=api_state, auth=self.ecm_auth)
         return self.return_from_ecm_response(r)
 
     def return_from_ecm_response(self, response):
         j = json.loads(response.text)
         print(response.text)
         if j['data'][0]['success']:
-            jr = {'success': True, 'status': 1 == j['data'][0]['data']}
+            jr = {
+                   'success': True,
+                   'status': self.api_on == j['data'][0]['data']
+            }
         else:
             jr = {'success': False, 'reason': j['data'][0]['reason']}
 
@@ -64,6 +71,9 @@ class LightsResource:
     def on_get(self, req, resp):
         self.set_success_status(resp)
         resp.body = self.get_ecm_status()
+
+    def quote(self, str):
+        return '"{}"'.format(str)
 
 app = falcon.API()
 lights = LightsResource()
